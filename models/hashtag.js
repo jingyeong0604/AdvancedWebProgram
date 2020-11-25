@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) =>(
-    sequelize.defube('hashtag', {
+    sequelize.define('hashtag', {
         title: {
-            taype: DataTypes.STRING(15),
+            type: DataTypes.STRING(15),
             allowNull: false,
             unique: true,
         },

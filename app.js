@@ -7,13 +7,20 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const passport = require('passport');
 require('dotenv').config();
 
 const page = require('./routes/page');
 const { sequelize } = require('./models');
 
+const authRouter = require('./routes/auth');
+const postRouter = require('./routes/post');
+const userRouter = require('./routes/users');
+const passportConfig= require('./passport/passportConfig');
+
 const app = express();
 sequelize.sync();
+passportConfig(passport);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -36,10 +43,15 @@ app.use(session({
   },
 }));
 app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/', page);
-
-
+app.use('/auth', authRouter);
+app.use('/img', express.static(path.join(__dirname, 'uploads')));
+app.use('/post', postRouter);
+app.use('/user', userRouter);
+//
 // catch 404 and forward to error handler
 app.use((req, res, next) =>{
   const err = new Error('Not Found');

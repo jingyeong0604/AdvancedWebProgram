@@ -1,6 +1,6 @@
-var Sequelize = require('sequelize');
-var env = process.env.NODE_ENV || 'development';
-var config = require('../config/config')[env];
+const Sequelize = require('sequelize');
+const env = process.env.NODE_ENV || 'development';
+const config = require('../config/config')[env];
 const db = {};
 
 const sequelize = new Sequelize(
@@ -8,10 +8,10 @@ const sequelize = new Sequelize(
 );
 
 db.sequelize = sequelize;
-db.sequelize = Sequelize;
+db.Sequelize = Sequelize;
 db.User = require('./user')(sequelize, Sequelize);
-db.Post = requre('./post')(sequelize, Sequelize);
-db.Hashtag = requre('./hashtag')(sequelize, Sequelize);
+db.Post = require('./post')(sequelize, Sequelize);
+db.Hashtag = require('./hashtag')(sequelize, Sequelize);
 db.User.hasMany(db.Post);
 db.Post.belongsTo(db.User);
 db.Post.belongsToMany(db.Hashtag, {through: 'PostHashtag'});
