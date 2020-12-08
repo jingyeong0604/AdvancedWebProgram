@@ -5,6 +5,7 @@ const morgan=require('morgan');
 const path = require('path');
 const session = require('express-session');
 const flash = require('connect-flash');
+const ColorHash = require('color-hash');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const passport = require('passport');
@@ -13,12 +14,26 @@ require('dotenv').config();
 const page = require('./routes/page');
 const { sequelize } = require('./models');
 
+const connect = require('./schemas');
 const authRouter = require('./routes/auth');
 const postRouter = require('./routes/post');
 const userRouter = require('./routes/users');
+
 const passportConfig= require('./passport/passportConfig');
 
+const webSocket = require('./socket');
 const app = express();
+connect();
+
+const sessionMiddleware = session({
+  resave:false,
+  saveUninitialized:false,
+  secret:process.env.COOKIE_SECRET,
+  cookie:{
+    httpOnly:true,
+    secure: false,
+  },
+});
 sequelize.sync();
 passportConfig(passport);
 
@@ -32,6 +47,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/gif', express.static(path.join(__dirname, 'uploads')));
 app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(session({
   resave: false,
@@ -42,7 +58,16 @@ app.use(session({
     secure: false,
   },
 }));
+app.use(sessionMiddleware);
 app.use(flash());
+
+app.use((req, res, next)=>{
+  if(!req.session.color){
+    const colorHash= new ColorHash();
+    req.session.color= colorHash.hex(req.sessionID);
+  }
+  next();
+});
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -64,13 +89,13 @@ app.use((err, req, res)=> {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
   // render the error page
   res.status(err.status || 500);
   res.render('error');
 });
-app.listen(app.get('port'), () =>{
+const server = app.listen(app.get('port'), () =>{
   console.log(app.get('port'), '번 포트에서 대기 중');
 });
 
+webSocket(server, app, sessionMiddleware);
 module.exports = app;
