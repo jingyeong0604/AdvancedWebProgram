@@ -10,13 +10,14 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const rooms = await Room.find({});
-    res.render('main', { rooms, title: 'GIF 채팅방' });
+    const room = await Room.find({});
+    res.render('main', { room, title: 'GIF 채팅방', error:req.flash('roomError') });
   } catch (error) {
     console.error(error);
     next(error);
   }
 });
+
 
 router.get('/room', (req, res) => {
   res.render('room', { title: 'GIF 채팅방 생성' });
@@ -24,12 +25,13 @@ router.get('/room', (req, res) => {
 
 router.post('/room', async (req, res, next) => {
   try {
-    const newRoom = await Room.create({
+    const rooms = new Room({
       title: req.body.title,
       max: req.body.max,
       owner: req.session.color,
       password: req.body.password,
     });
+    const newRoom = await rooms.save();
     const io = req.app.get('io');
     io.of('/room').emit('newRoom', newRoom);
     res.redirect(`/room/${newRoom._id}?password=${req.body.password}`);
@@ -39,19 +41,24 @@ router.post('/room', async (req, res, next) => {
   }
 });
 
+
 router.get('/room/:id', async (req, res, next) => {
   try {
     const room = await Room.findOne({ _id: req.params.id });
     const io = req.app.get('io');
     if (!room) {
-      return res.redirect('/?error=존재하지 않는 방입니다.');
+      req.flash('roomError', '존재하지 않는 방입니다.');
+      return res.redirect('/');
     }
     if (room.password && room.password !== req.query.password) {
-      return res.redirect('/?error=비밀번호가 틀렸습니다.');
+      req.flash('roomError', '비밀번호가 틀렸습니다.');
+      return res.redirect('/');
     }
-    const { rooms } = io.of('/chat').adapter;
+
+    const {rooms}  = io.of('/chat').adapter;
     if (rooms && rooms[req.params.id] && room.max <= rooms[req.params.id].length) {
-      return res.redirect('/?error=허용 인원이 초과하였습니다.');
+      req.flash('roomError', '허용 인원이 초과하였습니다.');
+      return res.redirect('/');
     }
     const chats = await Chat.find({ room: room._id }).sort('createdAt');
     return res.render('chat', {
@@ -82,11 +89,12 @@ router.delete('/room/:id', async (req, res, next) => {
 
 router.post('/room/:id/chat', async (req, res, next) => {
   try {
-    const chat = await Chat.create({
+    const chat = new Chat({
       room: req.params.id,
       user: req.session.color,
       chat: req.body.chat,
     });
+    await chat.save();
     req.app.get('io').of('/chat').to(req.params.id).emit('chat', chat);
     res.send('ok');
   } catch (error) {

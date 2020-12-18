@@ -13,7 +13,7 @@ module.exports= (server, app, sessionMiddleware) => {
     room.on('connection', (socket)=>{
         console.log('room 네임스페이스에 접속');
         socket.on('disconnect', ()=>{
-            console.log('room 네입스페이스 접속 해제');
+            console.log('room 네임스페이스 접속 해제');
         });
     });
     chat.on('connection', (socket) =>{
@@ -33,8 +33,8 @@ module.exports= (server, app, sessionMiddleware) => {
             socket.leave(roomId);
             const currentRoom = socket.adapter.rooms[roomId];
             const userCount = currentRoom?currentRoom.length:0;
-            if(userCount ===0){
-                axios.delete(`http://localhost:8001/room/${roomId}`)
+            if(userCount === 0){
+                axios.delete(`http://localhost:3000/room/${roomId}`)
                     .then(()=>{
                         console.log('방 제거 요청 성공');
                     })

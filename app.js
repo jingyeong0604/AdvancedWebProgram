@@ -11,13 +11,17 @@ const logger = require('morgan');
 const passport = require('passport');
 require('dotenv').config();
 
-const page = require('./routes/page');
+const indexRouter = require('./routes');
+const connect = require('./schemas');
+
+const pageRouter = require('./routes/page');
 const { sequelize } = require('./models');
 
-const connect = require('./schemas');
+
 const authRouter = require('./routes/auth');
 const postRouter = require('./routes/post');
 const userRouter = require('./routes/users');
+
 
 const passportConfig= require('./passport/passportConfig');
 
@@ -71,11 +75,16 @@ app.use((req, res, next)=>{
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/', page);
+app.use('/', pageRouter);
+
+app.use('/', indexRouter);
 app.use('/auth', authRouter);
 app.use('/img', express.static(path.join(__dirname, 'uploads')));
 app.use('/post', postRouter);
 app.use('/user', userRouter);
+
+
+
 //
 // catch 404 and forward to error handler
 app.use((req, res, next) =>{
